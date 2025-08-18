@@ -1,4 +1,4 @@
-// js/main.js (Final Version - with Individual QR Print)
+// js/main.js (Final Version - Corrected QR Print Function Scope)
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (await handleUrlRouting()) return;
@@ -22,9 +22,9 @@ async function handleUrlRouting() {
         singleRoomView.classList.remove('hidden');
         singleRoomView.style.display = 'block';
 
-        // !!! สำคัญ: แก้ URL และ KEY ตรงนี้ให้เป็นของคุณ !!!
-        const SUPABASE_URL = 'https://jvixnexwrczctouwmlkf.supabase.co'; // <-- ตรวจสอบว่าค่านี้ถูกต้อง
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2aXhuZXh3cmN6Y3RvdXdtbGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNTI3NTUsImV4cCI6MjA3MDkyODc1NX0.KceJ6reFzn7jD2h1QSfHQX8Ga2MxrC9MAGXNAXNpRoo'; // <-- ตรวจสอบว่าค่านี้ถูกต้อง
+// 1. ใส่ "กุญแจ" ที่คัดลอกมาจาก Supabase
+const SUPABASE_URL = 'https://jvixnexwrczctouwmlkf.supabase.co'; // <-- ตรวจสอบว่าค่านี้ถูกต้อง
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2aXhuZXh3cmN6Y3RvdXdtbGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNTI3NTUsImV4cCI6MjA3MDkyODc1NX0.KceJ6reFzn7jD2h1QSfHQX8Ga2MxrC9MAGXNAXNpRoo';
         const { createClient } = supabase;
         const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         
@@ -204,6 +204,8 @@ async function initApp() {
                 if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) deleteEvaluation(idToDelete);
             }
         });
+        
+        // --- CORRECTED: Added Event Listener for QR Print Buttons ---
         $('#qrCodeContainer')?.addEventListener('click', (e) => {
             const printBtn = e.target.closest('.print-qr-btn');
             if (printBtn) {
@@ -462,48 +464,40 @@ async function initApp() {
         }).join('');
     }
 
-    // ในไฟล์ js/main.js
-
-function printSingleQR(roomId) {
-    const room = rooms.find(r => r.id == roomId);
-    if (!room) return;
-
-    const printArea = document.createElement('div');
-    printArea.className = 'printable';
+    // --- CORRECTED: Moved this function inside initApp scope ---
+    function printSingleQR(roomId) {
+        const room = rooms.find(r => r.id == roomId);
+        if (!room) return;
     
-    const baseUrl = window.location.origin + window.location.pathname;
-    const roomUrl = `${baseUrl}#room=${encodeURIComponent(room.name)}`;
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(roomUrl)}&qzone=2`;
-
-    // --- ส่วนที่แก้ไข ---
-    // 1. สร้าง Image object ขึ้นมาใหม่
-    const qrImage = new Image();
-    
-    // 2. ตั้งค่า Cross-Origin เพื่อให้เบราว์เซอร์อนุญาตให้โหลดรูปมาใช้งาน
-    qrImage.crossOrigin = "anonymous";
-    qrImage.src = qrApiUrl;
-
-    // 3. รอจนกว่ารูปจะโหลดเสร็จสมบูรณ์
-    qrImage.onload = () => {
-        // 4. เมื่อรูปโหลดเสร็จแล้ว ค่อยสร้าง HTML และสั่งพิมพ์
-        printArea.innerHTML = `
-            <div style="width: 100%; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-family: sans-serif; color: black;">
-                <h1 style="font-size: 3rem; font-weight: bold; margin: 0;">ห้อง ${room.name}</h1>
-                <img src="${qrImage.src}" style="width: 40%; margin: 2rem 0;" alt="QR Code">
-                <p style="font-size: 1.25rem;">สแกน QR Code นี้เพื่อเข้าดู Dashboard<br>และผลการประเมินความสะอาดของห้องเรียน</p>
-            </div>
-        `;
+        const printArea = document.createElement('div');
+        printArea.className = 'printable';
         
-        document.body.appendChild(printArea);
-        window.print();
-        document.body.removeChild(printArea);
-    };
-
-    // กรณีที่โหลดรูปไม่สำเร็จ
-    qrImage.onerror = () => {
-        alert('เกิดข้อผิดพลาดในการโหลดรูป QR Code เพื่อพิมพ์');
-    };
-}
+        const baseUrl = window.location.origin + window.location.pathname;
+        const roomUrl = `${baseUrl}#room=${encodeURIComponent(room.name)}`;
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(roomUrl)}&qzone=2`;
+    
+        const qrImage = new Image();
+        qrImage.crossOrigin = "anonymous";
+        qrImage.src = qrApiUrl;
+    
+        qrImage.onload = () => {
+            printArea.innerHTML = `
+                <div style="width: 100%; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-family: sans-serif; color: black;">
+                    <h1 style="font-size: 3rem; font-weight: bold; margin: 0;">ห้อง ${room.name}</h1>
+                    <img src="${qrImage.src}" style="width: 40%; margin: 2rem 0;" alt="QR Code">
+                    <p style="font-size: 1.25rem;">สแกน QR Code นี้เพื่อเข้าดู Dashboard<br>และผลการประเมินความสะอาดของห้องเรียน</p>
+                </div>
+            `;
+            
+            document.body.appendChild(printArea);
+            window.print();
+            document.body.removeChild(printArea);
+        };
+    
+        qrImage.onerror = () => {
+            alert('เกิดข้อผิดพลาดในการโหลดรูป QR Code เพื่อพิมพ์');
+        };
+    }
 
     function renderRoomList() {
         const container = $('#roomListContainer');
