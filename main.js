@@ -1,125 +1,35 @@
-// js/main.js (Final Version - Corrected QR Print Function Scope)
+// js/main.js (Final Version)
 
 document.addEventListener('DOMContentLoaded', async () => {
-    if (await handleUrlRouting()) return;
+    // 1. ตรวจสอบสิทธิ์การล็อกอินก่อน ถ้าไม่ผ่านจะถูก redirect ไปหน้า login
     const session = await protectPage();
     if (!session) return;
+
+    // 2. ถ้าล็อกอินผ่าน ให้เริ่มการทำงานของแอปพลิเคชัน
     initApp();
 });
 
 // =============================================================================
-//  PUBLIC ROUTING & SINGLE ROOM DASHBOARD
-// =============================================================================
-async function handleUrlRouting() {
-    const hash = window.location.hash;
-    const roomMatch = hash.match(/^#room=([a-zA-Z0-9\-_%]+)$/);
-    if (roomMatch) {
-        const roomName = decodeURIComponent(roomMatch[1]);
-        document.querySelector('header').style.display = 'none';
-        const mainContent = document.querySelector('main');
-        mainContent.querySelectorAll('section[id^="tab-"]').forEach(sec => sec.style.display = 'none');
-        const singleRoomView = document.getElementById('single-room-view');
-        singleRoomView.classList.remove('hidden');
-        singleRoomView.style.display = 'block';
-
-// 1. ใส่ "กุญแจ" ที่คัดลอกมาจาก Supabase
-const SUPABASE_URL = 'https://jvixnexwrczctouwmlkf.supabase.co'; // <-- ตรวจสอบว่าค่านี้ถูกต้อง
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp2aXhuZXh3cmN6Y3RvdXdtbGtmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUzNTI3NTUsImV4cCI6MjA3MDkyODc1NX0.KceJ6reFzn7jD2h1QSfHQX8Ga2MxrC9MAGXNAXNpRoo';
-        const { createClient } = supabase;
-        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        
-        await renderSingleRoomDashboard(roomName, supabaseClient);
-        return true;
-    }
-    return false;
-}
-
-async function renderSingleRoomDashboard(roomName, supabaseClient) {
-    const $ = (sel) => document.querySelector(sel);
-    $('#room-view-name').textContent = `กำลังโหลดข้อมูลห้อง ${roomName}...`;
-    
-    const { data: roomData, error: roomError } = await supabaseClient.from('evaluations').select(`*, rooms!inner(name), evaluation_photos(photo_url)`).eq('rooms.name', roomName).order('created_at', { ascending: false });
-    const { data: allData, error: allError } = await supabaseClient.from('evaluations').select('total_score');
-
-    if (roomError || !roomData || roomData.length === 0) {
-        $('#room-view-name').textContent = `ไม่พบข้อมูลสำหรับห้อง ${roomName}`;
-        $('#room-kpi-latest, #room-kpi-avg, #room-kpi-count, #room-kpi-overall-avg').textContent = '-';
-        return;
-    }
-
-    $('#room-view-name').textContent = roomName;
-    $('#room-kpi-latest').textContent = roomData[0].total_score;
-    const roomTotalSum = roomData.reduce((sum, item) => sum + item.total_score, 0);
-    $('#room-kpi-avg').textContent = (roomTotalSum / roomData.length).toFixed(1);
-    $('#room-kpi-count').textContent = roomData.length;
-
-    if (allData && allData.length > 0) {
-        const overallTotalSum = allData.reduce((sum, item) => sum + item.total_score, 0);
-        $('#room-kpi-overall-avg').textContent = (overallTotalSum / allData.length).toFixed(1);
-    } else {
-        $('#room-kpi-overall-avg').textContent = '-';
-    }
-
-    const categoryKeys = ['clean', 'tidy', 'board', 'energy', 'readiness'];
-    const radarLabels = ['ความสะอาด', 'ระเบียบ', 'บอร์ด', 'พลังงาน', 'พร้อมใช้'];
-    const radarData = categoryKeys.map(key => roomData.reduce((sum, item) => sum + (item.scores[key] || 0), 0) / roomData.length);
-    drawPublicChart('room-radar-chart', 'radar', radarLabels, radarData, 'คะแนนเฉลี่ย');
-
-    const sortedData = [...roomData].sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
-    const lineLabels = sortedData.map(item => new Date(item.created_at).toLocaleDateString('th-TH', { day: '2-digit', month: 'short' }));
-    const lineData = sortedData.map(item => item.total_score);
-    drawPublicChart('room-line-chart', 'line', lineLabels, lineData, 'คะแนน');
-    
-    const latestNoteEl = $('#room-latest-note');
-    const latestNote = roomData[0].note;
-    if (latestNote) {
-        latestNoteEl.innerHTML = `<p class="text-slate-200">${latestNote.replace(/\n/g, '<br>')}</p>`;
-    } else {
-        latestNoteEl.innerHTML = `<p class="text-slate-400 text-sm italic">ไม่มีหมายเหตุ</p>`;
-    }
-
-    const photoGallery = $('#room-photo-gallery');
-    const allPhotos = roomData.flatMap(item => item.evaluation_photos.map(p => p.photo_url));
-    if (allPhotos.length > 0) {
-        photoGallery.innerHTML = allPhotos.slice(0, 8).map(url => `<a href="${url}" target="_blank" class="block"><img src="${url}" class="w-full h-28 object-cover rounded-lg border-2 border-slate-700 hover:border-emerald-500"></a>`).join('');
-    } else {
-        photoGallery.innerHTML = '<p class="text-slate-400 text-sm">ไม่มีรูปภาพ</p>';
-    }
-}
-
-let publicChartInstances = {};
-function drawPublicChart(canvasId, type, labels, data, label) {
-    const ctx = document.getElementById(canvasId)?.getContext('2d');
-    if (!ctx) return;
-    if (publicChartInstances[canvasId]) publicChartInstances[canvasId].destroy();
-    const chartColors = { backgroundColor: 'rgba(22, 163, 74, 0.2)', borderColor: 'rgba(52, 211, 153, 1)', pointBackgroundColor: 'rgba(52, 211, 153, 1)', color: 'rgba(229, 231, 235, 0.8)' };
-    if (type === 'radar') {
-        chartColors.backgroundColor = 'rgba(52, 211, 153, 0.2)';
-        chartColors.borderColor = 'rgba(52, 211, 153, 1)';
-    }
-    publicChartInstances[canvasId] = new Chart(ctx, {
-        type, data: { labels, datasets: [{ label, data, ...chartColors, borderWidth: 1.5, tension: 0.1 }] },
-        options: {
-            responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: chartColors.color } } },
-            scales: (type === 'line') ? { y: { ticks: { color: chartColors.color }, grid: { color: 'rgba(100, 116, 139, 0.2)' } }, x: { ticks: { color: chartColors.color }, grid: { color: 'rgba(100, 116, 139, 0.2)' } } }
-            : (type === 'radar' ? { r: { beginAtZero: true, max: 10, ticks: { color: chartColors.color, backdropColor: 'transparent' }, grid: { color: 'rgba(100, 116, 139, 0.2)' }, pointLabels: { color: chartColors.color } } } : {})
-        }
-    });
-}
-
-// =============================================================================
-//  MAIN APP FOR LOGGED-IN USERS
+//  MAIN APP CONTROLLER
 // =============================================================================
 async function initApp() {
+    // --- Helper Functions ---
     const $ = (sel) => document.querySelector(sel);
     const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+    // --- State Variables ---
     let rooms = await fetchRooms();
     let allEvaluationsData = [];
     let chartInstance = null;
     let currentChartType = 'bar';
 
+    // ==========================================================
+    // A. UI INITIALIZATION: ตั้งค่าการทำงานของปุ่มและฟอร์มทั้งหมด
+    // ==========================================================
     function initUI() {
         renderRoomOptions(rooms);
+        
+        // -- Event Listener: Tab Switching --
         $$('.tabBtn').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const tab = e.currentTarget.dataset.tab;
@@ -129,24 +39,10 @@ async function initApp() {
                 $(`#tab-${tab}`).classList.remove('hidden');
                 if (tab === 'dashboard') renderAll();
                 if (tab === 'manage') renderRoomList();
-                if (tab === 'qr') renderQRCodes();
             });
         });
-        $('#roomSearchInput')?.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const filteredRooms = rooms.filter(room => room.name.toLowerCase().includes(searchTerm));
-            renderRoomOptions(filteredRooms, false);
-        });
-        $$('.chart-type-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                $$('.chart-type-btn').forEach(b => b.classList.remove('chart-type-active'));
-                btn.classList.add('chart-type-active');
-                currentChartType = btn.dataset.type;
-                $('#barChartCategorySelector').classList.toggle('hidden', currentChartType !== 'bar');
-                $('#timeGranularitySelector').classList.toggle('hidden', currentChartType !== 'line');
-                renderAll();
-            });
-        });
+
+        // -- Event Listener: Score Sliders --
         ['clean', 'tidy', 'board', 'energy', 'readiness'].forEach(id => {
             const slider = $('#' + id);
             const valueDisplay = $('#' + id + 'Val');
@@ -157,7 +53,28 @@ async function initApp() {
                 });
             }
         });
-        $('#saveBtn')?.addEventListener('click', () => saveEvaluation());
+
+        // -- Event Listener: Room Search Input --
+        $('#roomSearchInput')?.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            const filteredRooms = rooms.filter(room => room.name.toLowerCase().includes(searchTerm));
+            renderRoomOptions(filteredRooms, false);
+        });
+
+        // -- Event Listener: Chart Type Selector Buttons --
+        $$('.chart-type-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                $$('.chart-type-btn').forEach(b => b.classList.remove('chart-type-active'));
+                btn.classList.add('chart-type-active');
+                currentChartType = btn.dataset.type;
+                $('#barChartCategorySelector').classList.toggle('hidden', currentChartType !== 'bar');
+                $('#timeGranularitySelector').classList.toggle('hidden', currentChartType !== 'line');
+                renderAll();
+            });
+        });
+        
+        // -- Event Listeners: Main Buttons & Filters --
+        $('#saveBtn')?.addEventListener('click', saveEvaluation);
         $('#resetBtn')?.addEventListener('click', resetForm);
         $('#printBtn')?.addEventListener('click', () => window.print());
         $('#addRoomBtn')?.addEventListener('click', addRoom);
@@ -168,20 +85,8 @@ async function initApp() {
         $('#summaryDateFrom')?.addEventListener('change', renderAll);
         $('#summaryDateTo')?.addEventListener('change', renderAll);
         $('#closeModalBtn')?.addEventListener('click', closePhotoModal);
-        
-        $('#openRetroactiveModalBtn')?.addEventListener('click', openRetroactiveModal);
-        $('#closeRetroactiveModalBtn')?.addEventListener('click', closeRetroactiveModal);
-        $('#saveRetroactiveBtn')?.addEventListener('click', () => {
-            const date = $('#retroactiveDate').value;
-            const time = $('#retroactiveTime').value;
-            if (!date || !time) {
-                alert('กรุณากำหนดวันและเวลาให้ครบถ้วน');
-                return;
-            }
-            const combinedDateTime = new Date(`${date}T${time}`);
-            saveEvaluation(combinedDateTime);
-        });
 
+        // -- Event Listeners using Delegation for Dynamic Content --
         $('#roomListContainer')?.addEventListener('click', (e) => {
             const btn = e.target.closest('.delRoomBtn');
             if (btn) {
@@ -190,6 +95,7 @@ async function initApp() {
                 if (confirm(`คุณแน่ใจว่าต้องการลบห้อง "${roomName}" ?`)) deleteRoom(roomId);
             }
         });
+        
         $('#tableBody')?.addEventListener('click', (e) => {
             const viewBtn = e.target.closest('.view-photos-btn');
             const delBtn = e.target.closest('.delBtn');
@@ -204,17 +110,11 @@ async function initApp() {
                 if (confirm('คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?')) deleteEvaluation(idToDelete);
             }
         });
-        
-        // --- CORRECTED: Added Event Listener for QR Print Buttons ---
-        $('#qrCodeContainer')?.addEventListener('click', (e) => {
-            const printBtn = e.target.closest('.print-qr-btn');
-            if (printBtn) {
-                const roomId = printBtn.dataset.roomId;
-                printSingleQR(roomId);
-            }
-        });
     }
 
+    // ==========================================================
+    // B. DATA FUNCTIONS: คุยกับ Supabase
+    // ==========================================================
     async function fetchRooms() {
         const { data, error } = await supabaseClient.from('rooms').select('id, name').order('name');
         if (error) console.error("Error fetching rooms:", error);
@@ -260,10 +160,9 @@ async function initApp() {
         return allEvaluationsData;
     }
     
-    async function saveEvaluation(customTimestamp = null) {
+    async function saveEvaluation() {
         const saveMsg = $('#saveMsg');
         saveMsg.textContent = 'กำลังบันทึก...';
-        closeRetroactiveModal();
         const roomId = $('#roomSelect').value;
         if (!roomId) {
             alert('กรุณาเลือกห้อง');
@@ -277,21 +176,30 @@ async function initApp() {
         try {
             const { data: { user } } = await supabaseClient.auth.getUser();
             if (!user) throw new Error("ไม่พบข้อมูลผู้ใช้ กรุณาล็อกอินใหม่");
-            const evaluationData = { room_id: roomId, scores, total_score, note, user_id: user.id, created_at: customTimestamp ? customTimestamp.toISOString() : new Date().toISOString() };
-            const { data: evalData, error: evalError } = await supabaseClient.from('evaluations').insert([evaluationData]).select('id').single();
+
+            // Step 1: Insert evaluation text data
+            const { data: evalData, error: evalError } = await supabaseClient.from('evaluations').insert([{ room_id: roomId, scores, total_score, note, user_id: user.id }]).select('id').single();
             if (evalError) throw evalError;
             const evaluationId = evalData.id;
+
+            // Step 2: Upload photos and insert their URLs
             if (files.length > 0) {
                 const uploadPromises = Array.from(files).map(async (file) => {
                     const filePath = `${user.id}/${evaluationId}/${Date.now()}_${file.name}`;
                     const { error: uploadError } = await supabaseClient.storage.from('evaluation-photos').upload(filePath, file);
-                    if (uploadError) throw uploadError;
+                    if (uploadError) {
+                        // Important: throw error to stop the process if an upload fails
+                        throw uploadError;
+                    }
                     const { data } = supabaseClient.storage.from('evaluation-photos').getPublicUrl(filePath);
                     return { evaluation_id: evaluationId, photo_url: data.publicUrl };
                 });
                 const photoInsertData = await Promise.all(uploadPromises);
-                await supabaseClient.from('evaluation_photos').insert(photoInsertData);
+                
+                const { error: photoDbError } = await supabaseClient.from('evaluation_photos').insert(photoInsertData);
+                if (photoDbError) throw photoDbError;
             }
+
             saveMsg.textContent = 'บันทึกเรียบร้อย 🎉';
             resetForm();
             await renderAll();
@@ -309,6 +217,9 @@ async function initApp() {
         else await renderAll();
     }
 
+    // ==========================================================
+    // C. RENDER FUNCTIONS: วาดข้อมูลลงบนหน้าจอ
+    // ==========================================================
     async function renderAll() {
         const data = await fetchAllEvaluations();
         renderKPIs(data);
@@ -322,6 +233,7 @@ async function initApp() {
         const data = (roomId === 'all') ? allData : allData.filter(item => item.rooms.id == roomId);
         const kpiAvg = $('#kpiAvg'), kpiCount = $('#kpiCount'), kpiBest = $('#kpiBest');
         if (!kpiAvg || !kpiCount || !kpiBest) return;
+
         if (data.length === 0) {
             kpiAvg.textContent = '-'; kpiCount.textContent = '0'; kpiBest.textContent = (roomId === 'all') ? '-' : 'ยังไม่มีข้อมูล';
             return;
@@ -341,7 +253,9 @@ async function initApp() {
                 if (avg > bestRoom.avg) bestRoom = { name: roomName, avg };
             }
             kpiBest.textContent = `${bestRoom.name} (${bestRoom.avg.toFixed(1)})`;
-        } else { kpiBest.textContent = 'N/A'; }
+        } else {
+            kpiBest.textContent = 'N/A';
+        }
     }
     
     function renderSummarySection(allData) {
@@ -350,6 +264,7 @@ async function initApp() {
         let startDate = new Date(), endDate = new Date();
         startDate.setHours(0, 0, 0, 0);
         endDate.setHours(23, 59, 59, 999);
+
         if (timeRange === 'this_week') {
             const day = startDate.getDay();
             const diff = startDate.getDate() - day + (day === 0 ? -6 : 1);
@@ -360,23 +275,33 @@ async function initApp() {
             startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
             endDate = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0);
         } else if (timeRange === 'custom') {
-            const fromVal = $('#summaryDateFrom').value, toVal = $('#summaryDateTo').value;
+            const fromVal = $('#summaryDateFrom').value;
+            const toVal = $('#summaryDateTo').value;
             startDate = fromVal ? new Date(fromVal) : new Date('1970-01-01');
             endDate = toVal ? new Date(toVal) : new Date();
             endDate.setHours(23, 59, 59, 999);
         }
-        const filteredData = allData.filter(item => new Date(item.created_at) >= startDate && new Date(item.created_at) <= endDate);
+
+        const filteredData = allData.filter(item => {
+            const itemDate = new Date(item.created_at);
+            return itemDate >= startDate && itemDate <= endDate;
+        });
+
         const scoresByRoom = filteredData.reduce((acc, item) => {
             if (!acc[item.room]) acc[item.room] = [];
             acc[item.room].push(item.total_score);
             return acc;
         }, {});
+        
         const roomAverages = Object.entries(scoresByRoom).map(([name, scores]) => ({ name, avg: scores.reduce((a, b) => a + b, 0) / scores.length }));
+
         const bestRoomEl = $('#bestRoomDisplay'), bestScoreEl = $('#bestRoomScore');
         const worstRoomEl = $('#worstRoomDisplay'), worstScoreEl = $('#worstRoomScore');
+        
         if (roomAverages.length > 0) {
             roomAverages.sort((a, b) => b.avg - a.avg);
-            const best = roomAverages[0], worst = roomAverages[roomAverages.length - 1];
+            const best = roomAverages[0];
+            const worst = roomAverages[roomAverages.length - 1];
             bestRoomEl.textContent = best.name;
             bestScoreEl.textContent = `คะแนนเฉลี่ย: ${best.avg.toFixed(2)}`;
             worstRoomEl.textContent = worst.name;
@@ -392,10 +317,11 @@ async function initApp() {
         const roomId = $('#roomFilter')?.value || 'all';
         const data = (roomId === 'all') ? allData : allData.filter(item => item.rooms.id == roomId);
         let chartData = { labels: [], values: [] }, chartTitle = '';
+
         switch (currentChartType) {
             case 'bar':
                 const category = $('#barCategory')?.value || 'total_score';
-                const categoryText = $('#barCategory')?.options[$('#barCategory').selectedIndex].text || 'คะแนนรวม';
+                const categoryText = $('#barCategory')?.options[$('#barCategory').selectedIndex].text || 'คะแนนรวมเฉลี่ย';
                 chartTitle = `เปรียบเทียบ: ${categoryText}`;
                 const scoresByRoom = allData.reduce((acc, item) => {
                     if (!acc[item.room]) acc[item.room] = [];
@@ -404,7 +330,10 @@ async function initApp() {
                     return acc;
                 }, {});
                 chartData.labels = Object.keys(scoresByRoom).sort();
-                chartData.values = chartData.labels.map(room => scoresByRoom[room].reduce((s, c) => s + c, 0) / scoresByRoom[room].length);
+                chartData.values = chartData.labels.map(room => {
+                    const scores = scoresByRoom[room];
+                    return scores.reduce((s, c) => s + c, 0) / scores.length;
+                });
                 break;
             case 'line':
                 chartTitle = `แนวโน้มคะแนนเฉลี่ย`;
@@ -417,7 +346,10 @@ async function initApp() {
                 chartTitle = `ภาพรวมจุดแข็ง-จุดอ่อน (${roomName})`;
                 const categoryKeys = ['clean', 'tidy', 'board', 'energy', 'readiness'];
                 chartData.labels = ['ความสะอาด', 'ระเบียบ', 'บอร์ด', 'พลังงาน', 'พร้อมใช้'];
-                chartData.values = categoryKeys.map(key => data.length === 0 ? 0 : data.reduce((sum, item) => sum + (item.scores[key] || 0), 0) / data.length);
+                chartData.values = categoryKeys.map(key => {
+                    if (data.length === 0) return 0;
+                    return data.reduce((sum, item) => sum + (item.scores[key] || 0), 0) / data.length;
+                });
                 break;
         }
         $('#mainChartTitle').textContent = chartTitle;
@@ -443,66 +375,14 @@ async function initApp() {
         });
     }
 
-    function renderQRCodes() {
-        const container = $('#qrCodeContainer');
-        if (!container) return;
-        const baseUrl = window.location.origin + window.location.pathname;
-        container.innerHTML = rooms.map(room => {
-            const roomUrl = `${baseUrl}#room=${encodeURIComponent(room.name)}`;
-            const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(roomUrl)}&bgcolor=ffffff&color=000000&qzone=1`;
-            return `
-                <div class="glass p-4 rounded-xl text-center flex flex-col justify-between">
-                    <div>
-                        <img src="${qrApiUrl}" alt="QR Code for ${room.name}" class="w-full h-auto mx-auto rounded-lg bg-white p-2">
-                        <p class="mt-3 text-emerald-300 font-medium text-lg">${room.name}</p>
-                    </div>
-                    <button data-room-id="${room.id}" class="print-qr-btn btn w-full mt-4 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-700 text-white">
-                        พิมพ์
-                    </button>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // --- CORRECTED: Moved this function inside initApp scope ---
-    function printSingleQR(roomId) {
-        const room = rooms.find(r => r.id == roomId);
-        if (!room) return;
-    
-        const printArea = document.createElement('div');
-        printArea.className = 'printable';
-        
-        const baseUrl = window.location.origin + window.location.pathname;
-        const roomUrl = `${baseUrl}#room=${encodeURIComponent(room.name)}`;
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=800x800&data=${encodeURIComponent(roomUrl)}&qzone=2`;
-    
-        const qrImage = new Image();
-        qrImage.crossOrigin = "anonymous";
-        qrImage.src = qrApiUrl;
-    
-        qrImage.onload = () => {
-            printArea.innerHTML = `
-                <div style="width: 100%; height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; font-family: sans-serif; color: black;">
-                    <h1 style="font-size: 3rem; font-weight: bold; margin: 0;">ห้อง ${room.name}</h1>
-                    <img src="${qrImage.src}" style="width: 40%; margin: 2rem 0;" alt="QR Code">
-                    <p style="font-size: 1.25rem;">สแกน QR Code นี้เพื่อเข้าดู Dashboard<br>และผลการประเมินความสะอาดของห้องเรียน</p>
-                </div>
-            `;
-            
-            document.body.appendChild(printArea);
-            window.print();
-            document.body.removeChild(printArea);
-        };
-    
-        qrImage.onerror = () => {
-            alert('เกิดข้อผิดพลาดในการโหลดรูป QR Code เพื่อพิมพ์');
-        };
-    }
-
     function renderRoomList() {
         const container = $('#roomListContainer');
         if (!container) return;
-        container.innerHTML = rooms.length === 0 ? '<p class="text-slate-400">ยังไม่มีห้องเรียนในระบบ</p>' : rooms.map(room => `<div class="bg-slate-800 rounded-lg p-2 flex items-center gap-2"><span class="text-emerald-300 font-medium">${room.name}</span><button data-room-id="${room.id}" data-room-name="${room.name}" class="delRoomBtn text-rose-400 hover:text-rose-200 text-xs">(ลบ)</button></div>`).join('');
+        container.innerHTML = rooms.length === 0 ? '<p class="text-slate-400">ยังไม่มีห้องเรียนในระบบ</p>' : rooms.map(room => `
+            <div class="bg-slate-800 rounded-lg p-2 flex items-center gap-2">
+                <span class="text-emerald-300 font-medium">${room.name}</span>
+                <button data-room-id="${room.id}" data-room-name="${room.name}" class="delRoomBtn text-rose-400 hover:text-rose-200 text-xs">(ลบ)</button>
+            </div>`).join('');
     }
 
     function renderRoomOptions(roomList, updateAllFilters = true) {
@@ -511,7 +391,9 @@ async function initApp() {
         if (roomSelect) roomSelect.innerHTML = options || '<option value="">ไม่พบห้อง</option>';
         if (updateAllFilters) {
             const roomFilter = $('#roomFilter');
-            if (roomFilter) roomFilter.innerHTML = `<option value="all">ทุกห้อง</option>` + rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            if (roomFilter) {
+                roomFilter.innerHTML = `<option value="all">ทุกห้อง</option>` + rooms.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+            }
         }
     }
 
@@ -537,6 +419,9 @@ async function initApp() {
             </tr>`).join('');
     }
 
+    // ==========================================================
+    // D. HELPER FUNCTIONS & MODAL
+    // ==========================================================
     function openPhotoModal(photos) {
         const modal = $('#photoModal'), container = $('#modalImageContainer');
         if (!modal || !container) return;
@@ -551,25 +436,6 @@ async function initApp() {
         modal.classList.add('hidden');
         modal.classList.remove('flex');
         $('#modalImageContainer').innerHTML = '';
-    }
-    
-    function openRetroactiveModal() {
-        const dateInput = $('#retroactiveDate');
-        const timeInput = $('#retroactiveTime');
-        const now = new Date();
-        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-        dateInput.value = now.toISOString().slice(0, 10);
-        timeInput.value = now.toISOString().slice(11, 16);
-        $('#retroactiveModal').classList.remove('hidden');
-        $('#retroactiveModal').classList.add('flex');
-    }
-
-    function closeRetroactiveModal() {
-        const modal = $('#retroactiveModal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-        }
     }
     
     function aggregateDataByTime(data, granularity) {
@@ -615,7 +481,10 @@ async function initApp() {
         const totalScoreEl = $('#totalScore');
         if (totalScoreEl) totalScoreEl.textContent = total;
     }
-    
+
+    // ==========================================================
+    // E. APP START: เริ่มการทำงานของแอป
+    // ==========================================================
     initUI();
     await renderAll();
 }
