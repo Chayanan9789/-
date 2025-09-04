@@ -4,13 +4,10 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Student Volunteers | Classroom Audit</title>
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/dist/qrcode.min.js"></script>
-
     <style>
-        :root { --pri: #16a34a; --pri-d: #15803d; --pri-l: #86efac; --sec: #334155; --mut: #94a3b8; --bg: #0f172a; --card: #111827; --chip: #1f2d37; }
+        :root { --pri: #16a34a; --pri-d: #15803d; --pri-l: #86efac; --sec: #334155; --mut: #94a3b8; --bg: #0f172a; --card: #111827; --chip: #1f2937; }
         html, body { background: linear-gradient(120deg, #0b1222, #0e1a2f); color: #e5e7eb; }
         .glass { background: rgba(17, 24, 39, .7); backdrop-filter: blur(8px); border: 1px solid rgba(148, 163, 184, .15) }
         .btn { transition: .2s; }
@@ -21,20 +18,29 @@
         .grid-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px }
         .chart-type-btn { color: #94a3b8; transition: .2s; }
         .chart-type-active { background-color: #16a34a; color: #ffffff; }
+<<<<<<< HEAD
         @media print { .no-print { display: none !important; } .print-bg { background: #fff !important; color: #000 !important; } .glass { border: none; } }
         @media print {
             body * { visibility: hidden; }
             .printable, .printable * { visibility: visible; }
             .printable { position: absolute; left: 0; top: 0; width: 100%; }
         }
+=======
+        @media print { .no-print { display: none !important; } .print-bg { background: #fff !important; color: #000 !important; } .glass { border: none; } .chart-canvas { filter: grayscale(100%); } }
+>>>>>>> parent of cfe3183 (Revert "Update project files")
     </style>
 </head>
 <body class="min-h-screen">
-    <header style="display: block;" class="no-print glass sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-2">
+    <header class="no-print glass sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 grid place-items-center flex-shrink-0"><svg width="24" height="24" viewBox="0 0 24 24" class="text-emerald-400"><path fill="currentColor" d="M12 2a1 1 0 0 1 .94.34l8 9a1 1 0 1 1-1.48 1.32L19 11.22V20a2 2 0 0 1-2 2h-3v-6H10v6H7a2 2 0 0 1-2-2v-8.78L4.54 12.66A1 1 0 1 1 3.06 11.34l8-9A1 1 0 0 1 12 2Z"/></svg></div>
-                <div class="text-center sm:text-left"><h1 class="text-lg md:text-xl font-semibold text-emerald-300">คณะกรรมการนักเรียนจิตอาสา</h1><p class="text-xs text-slate-400">ระบบบันทึกและประเมินความเรียบร้อยห้องเรียน</p></div>
+                <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/30 grid place-items-center">
+                    <svg width="24" height="24" viewBox="0 0 24 24" class="text-emerald-400"><path fill="currentColor" d="M12 2a1 1 0 0 1 .94.34l8 9a1 1 0 1 1-1.48 1.32L19 11.22V20a2 2 0 0 1-2 2h-3v-6H10v6H7a2 2 0 0 1-2-2v-8.78L4.54 12.66A1 1 0 1 1 3.06 11.34l8-9A1 1 0 0 1 12 2Z"/></svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-semibold text-emerald-300">คณะกรรมการนักเรียนจิตอาสา</h1>
+                    <p class="text-xs text-slate-400">ระบบบันทึกและประเมินความเรียบร้อยห้องเรียน</p>
+                </div>
             </div>
             <div class="flex items-center gap-3">
                 <button id="printBtn" class="btn px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">พิมพ์เป็น PDF</button>
@@ -43,24 +49,28 @@
         </div>
         <nav class="max-w-7xl mx-auto px-4 pb-3">
             <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-                <button data-tab="evaluate" class="tabBtn tab-active btn w-full px-4 py-2 rounded-xl pill bg-slate-800/70">ประเมิน</button>
+                <button data-tab="evaluate" class="tabBtn tab-active btn w-full px-4 py-2 rounded-xl pill bg-slate-800/70">ประเมินห้องเรียน</button>
                 <button data-tab="dashboard" class="tabBtn btn w-full px-4 py-2 rounded-xl pill bg-slate-800/70">Dashboard</button>
                 <button data-tab="qr" class="tabBtn btn w-full px-4 py-2 rounded-xl pill bg-slate-800/70">QR Code</button>
                 <button data-tab="manage" class="tabBtn btn w-full px-4 py-2 rounded-xl pill bg-slate-800/70">จัดการข้อมูล</button>
             </div>
         </nav>
     </header>
-    
-    <main style="display: block;" class="max-w-7xl mx-auto px-4 py-6 space-y-6">
-        <section id="tab-evaluate" class="glass rounded-2xl p-4 md:p-5 space-y-5">
+
+    <main class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        <section id="tab-evaluate" class="glass rounded-2xl p-5 space-y-5">
             <div class="flex flex-col md:flex-row md:items-center gap-3 md:gap-6">
                 <h2 class="text-lg font-semibold text-emerald-300">บันทึกการประเมิน</h2>
                 <div class="flex-1"></div>
+<<<<<<< HEAD
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                     <div class="pill bg-slate-800/70 px-3 py-2 rounded-xl">
                         <label class="text-xs text-slate-400">ผู้ตรวจ</label>
                         <select id="evaluatorSelect" class="bg-transparent ring-focus text-slate-100"></select>
                     </div>
+=======
+                <div class="flex items-center gap-3">
+>>>>>>> parent of cfe3183 (Revert "Update project files")
                     <div class="pill bg-slate-800/70 px-3 py-2 rounded-xl flex flex-col gap-1">
                         <label class="text-xs text-slate-400">เลือกห้อง (ค้นหาได้)</label>
                         <div class="flex gap-2 items-center">
@@ -68,7 +78,11 @@
                             <input id="roomSearchInput" class="bg-slate-900/60 rounded-lg px-2 py-1 ring-focus text-sm w-24" placeholder="ค้นหา..." />
                         </div>
                     </div>
+<<<<<<< HEAD
                     <div class="pill bg-slate-800/70 px-3 py-2 rounded-xl text-center">
+=======
+                    <div class="pill bg-slate-800/70 px-3 py-2 rounded-xl">
+>>>>>>> parent of cfe3183 (Revert "Update project files")
                         <span class="text-sm text-slate-300">คะแนนรวม: <b id="totalScore" class="text-emerald-300">0</b> / 50</span>
                     </div>
                 </div>
@@ -92,32 +106,67 @@
                 <div class="space-y-4">
                     <div class="bg-slate-900/50 rounded-xl p-4 border border-slate-700/40"><label class="block mb-2 text-slate-200">หมายเหตุเพิ่มเติม</label><textarea id="noteInput" rows="4" class="w-full bg-slate-800/70 rounded-lg p-3 ring-focus" placeholder="ระบุรายละเอียดเพิ่มเติม เช่น จุดที่ต้องปรับปรุง"></textarea></div>
                     <div class="bg-slate-900/50 rounded-xl p-4 border border-slate-700/40"><label class="text-slate-200">อัปโหลดรูปหลักฐาน</label><input id="photoInput" type="file" accept="image/*" multiple class="mt-2 block w-full text-sm text-slate-300 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-600 file:text-white hover:file:bg-emerald-700" /><div id="photoPreview" class="grid-auto mt-3"></div></div>
-                    <div class="flex flex-col sm:flex-row gap-3">
-                        <button id="saveBtn" class="btn flex-1 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">บันทึกผล (ปัจจุบัน)</button>
-                        <button id="openRetroactiveModalBtn" class="btn flex-1 px-4 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white">บันทึกย้อนหลัง</button>
-                        <button id="resetBtn" class="btn px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100">ล้างค่า</button>
-                    </div>
+                    <div class="flex gap-3"><button id="saveBtn" class="btn flex-1 px-4 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">บันทึกผล</button><button id="resetBtn" class="btn px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 text-slate-100">ล้างค่า</button></div>
                     <p id="saveMsg" class="text-sm text-emerald-300 h-5"></p>
                 </div>
             </div>
         </section>
+<<<<<<< HEAD
         <section id="tab-dashboard" class="glass rounded-2xl p-4 md:p-5 hidden space-y-5">
             <div class="flex flex-col md:flex-row md:items-end gap-4"><div><h2 class="text-lg font-semibold text-emerald-300">Dashboard สถิติ</h2><p class="text-sm text-slate-400">ดูแนวโน้มคะแนนและเปรียบเทียบระหว่างห้อง</p></div><div class="flex-1"></div><div class="pill bg-slate-800/70 px-3 py-2 rounded-xl"><label class="block text-xs text-slate-400">อาคาร</label><select id="buildingFilter" class="bg-transparent ring-focus w-full"><option value="all">ทุกอาคาร</option></select></div><div class="pill bg-slate-800/70 px-3 py-2 rounded-xl"><label class="block text-xs text-slate-400">ห้อง</label><select id="roomFilter" class="bg-transparent ring-focus w-full"><option value="all">ทุกห้อง</option></select></div></div>
             <div class="grid md:grid-cols-3 gap-4"><div class="rounded-2xl p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-slate-300 text-sm">ค่าเฉลี่ย (ที่เลือก)</p><div class="text-3xl font-bold text-emerald-300 mt-1" id="kpiAvg">-</div></div><div class="rounded-2xl p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-slate-300 text-sm">จำนวนการประเมิน</p><div class="text-3xl font-bold text-emerald-300 mt-1" id="kpiCount">-</div></div><div class="rounded-2xl p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-slate-300 text-sm">ห้องคะแนนสูงสุด (รวม)</p><div class="text-3xl font-bold text-emerald-300 mt-1" id="kpiBest">-</div></div></div>
             <div class="rounded-2xl p-4 bg-slate-900/50 border border-slate-700/40"><div class="flex flex-col md:flex-row md:items-center gap-3"><h3 class="font-medium text-slate-200">สรุปห้องเรียนดีเด่นและห้องที่ต้องปรับปรุง</h3><div class="flex-1"></div><div class="flex items-center gap-2 flex-wrap justify-end"><select id="summaryTimeRange" class="bg-slate-800/70 text-sm ring-focus rounded-lg px-3 py-2"><option value="today">วันนี้</option><option value="this_week">สัปดาห์นี้</option><option value="this_month">เดือนนี้</option><option value="custom">กำหนดเอง</option></select><div id="customDateRange" class="flex items-center gap-2 hidden"><input type="date" id="summaryDateFrom" class="bg-slate-800/70 text-sm ring-focus rounded-lg px-3 py-2"><span class="text-slate-400">-</span><input type="date" id="summaryDateTo" class="bg-slate-800/70 text-sm ring-focus rounded-lg px-3 py-2"></div></div></div><div class="grid md:grid-cols-2 gap-4 mt-4"><div class="rounded-xl p-4 bg-emerald-500/10 border border-emerald-400/20"><p class="text-sm text-emerald-200">🏆 ห้องที่คะแนนเฉลี่ยสูงสุด</p><div id="bestRoomDisplay" class="text-2xl font-bold text-white mt-1">-</div><div id="bestRoomScore" class="text-sm text-emerald-300"></div></div><div class="rounded-xl p-4 bg-rose-500/10 border border-rose-400/20"><p class="text-sm text-rose-200">⚠️ ห้องที่คะแนนเฉลี่ยต่ำสุด</p><div id="worstRoomDisplay" class="text-2xl font-bold text-white mt-1">-</div><div id="worstRoomScore" class="text-sm text-rose-300"></div></div></div></div>
             <div class="rounded-2xl p-4 bg-slate-900/50 border border-slate-700/40"><div class="flex flex-wrap items-center justify-between gap-3 mb-4"><h3 id="mainChartTitle" class="font-medium text-slate-200">เปรียบเทียบคะแนนเฉลี่ยรายห้อง</h3><div class="flex flex-wrap items-center gap-2"><div id="barChartCategorySelector" class="flex items-center gap-2 p-1 rounded-lg bg-slate-800"><label class="text-xs text-slate-400 pl-2">หัวข้อ:</label><select id="barCategory" class="bg-transparent ring-focus text-xs text-emerald-300"><option value="total_score">คะแนนรวม</option><option value="clean">ความสะอาด</option><option value="tidy">ความเป็นระเบียบ</option><option value="board">บอร์ดและสื่อ</option><option value="energy">ประหยัดพลังงาน</option><option value="readiness">ความพร้อมใช้</option></select></div><div id="timeGranularitySelector" class="flex items-center gap-2 p-1 rounded-lg bg-slate-800 hidden"><label class="text-xs text-slate-400 pl-2">แนวโน้ม:</label><select id="timeGranularity" class="bg-transparent ring-focus text-xs text-emerald-300"><option value="daily">รายวัน</option><option value="weekly">รายสัปดาห์</option><option value="monthly">รายเดือน</option></select></div><div id="chartTypeSelector" class="flex items-center gap-1 p-1 rounded-lg bg-slate-800"><button data-type="bar" class="chart-type-btn chart-type-active px-3 py-1 text-xs rounded-md">แท่ง</button><button data-type="line" class="chart-type-btn px-3 py-1 text-xs rounded-md">แนวโน้ม</button><button data-type="radar" class="chart-type-btn px-3 py-1 text-xs rounded-md">เรดาร์</button></div></div></div><div class="relative h-80"><canvas id="mainChart"></canvas></div></div>
             <div class="rounded-2xl p-4 bg-slate-900/50 border border-slate-700/40"><h3 class="font-medium text-slate-200 mb-3">ตารางข้อมูลการประเมินทั้งหมด</h3><div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-4">วันที่</th><th class="text-left py-2 pr-4">ห้อง</th><th class="text-left py-2 pr-4">ผู้ตรวจ</th><th class="text-left py-2 pr-4">รวม</th><th class="text-left py-2 pr-4">หมายเหตุ</th><th class="text-left py-2 pr-4">รูป</th><th class="text-left py-2 pr-4">จัดการ</th></tr></thead><tbody id="tableBody"></tbody></table></div></div>
+=======
+
+        <section id="tab-dashboard" class="glass rounded-2xl p-5 hidden space-y-5">
+            <div class="flex flex-col md:flex-row md:items-end gap-4">
+                <div><h2 class="text-lg font-semibold text-emerald-300">Dashboard สถิติ</h2><p class="text-sm text-slate-400">ดูแนวโน้มคะแนนและเปรียบเทียบระหว่างห้อง</p></div>
+                <div class="flex-1"></div>
+                <div class="pill bg-slate-800/70 px-3 py-2 rounded-xl"><label class="block text-xs text-slate-400">ห้อง</label><select id="roomFilter" class="bg-transparent ring-focus w-full"><option value="all">ทุกห้อง</option></select></div>
+            </div>
+            <div class="grid md:grid-cols-3 gap-4">
+                <div class="rounded-2xl p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-slate-300 text-sm">ค่าเฉลี่ย (ที่เลือก)</p><div class="text-3xl font-bold text-emerald-300 mt-1" id="kpiAvg">-</div></div>
+                <div class="rounded-2xl p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-slate-300 text-sm">จำนวนการประเมิน</p><div class="text-3xl font-bold text-emerald-300 mt-1" id="kpiCount">-</div></div>
+                <div class="rounded-2xl p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-slate-300 text-sm">ห้องคะแนนสูงสุด (รวม)</p><div class="text-3xl font-bold text-emerald-300 mt-1" id="kpiBest">-</div></div>
+            </div>
+            <div class="rounded-2xl p-4 bg-slate-900/50 border border-slate-700/40">
+                <div class="flex flex-col md:flex-row md:items-center gap-3"><h3 class="font-medium text-slate-200">สรุปห้องเรียนดีเด่นและห้องที่ต้องปรับปรุง</h3><div class="flex-1"></div><div class="flex items-center gap-2"><select id="summaryTimeRange" class="bg-slate-800/70 text-sm ring-focus rounded-lg px-3 py-2"><option value="today">วันนี้</option><option value="this_week">สัปดาห์นี้</option><option value="this_month">เดือนนี้</option><option value="custom">กำหนดเอง</option></select><div id="customDateRange" class="flex items-center gap-2 hidden"><input type="date" id="summaryDateFrom" class="bg-slate-800/70 text-sm ring-focus rounded-lg px-3 py-2"><span class="text-slate-400">-</span><input type="date" id="summaryDateTo" class="bg-slate-800/70 text-sm ring-focus rounded-lg px-3 py-2"></div></div></div>
+                <div class="grid md:grid-cols-2 gap-4 mt-4">
+                    <div class="rounded-xl p-4 bg-emerald-500/10 border border-emerald-400/20"><p class="text-sm text-emerald-200">🏆 ห้องที่คะแนนเฉลี่ยสูงสุด</p><div id="bestRoomDisplay" class="text-2xl font-bold text-white mt-1">-</div><div id="bestRoomScore" class="text-sm text-emerald-300"></div></div>
+                    <div class="rounded-xl p-4 bg-rose-500/10 border border-rose-400/20"><p class="text-sm text-rose-200">⚠️ ห้องที่คะแนนเฉลี่ยต่ำสุด</p><div id="worstRoomDisplay" class="text-2xl font-bold text-white mt-1">-</div><div id="worstRoomScore" class="text-sm text-rose-300"></div></div>
+                </div>
+            </div>
+            <div class="rounded-2xl p-4 bg-slate-900/50 border border-slate-700/40">
+                <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <h3 id="mainChartTitle" class="font-medium text-slate-200">เปรียบเทียบคะแนนเฉลี่ยรายห้อง</h3>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <div id="barChartCategorySelector" class="flex items-center gap-2 p-1 rounded-lg bg-slate-800"><label class="text-xs text-slate-400 pl-2">หัวข้อ:</label><select id="barCategory" class="bg-transparent ring-focus text-xs text-emerald-300"><option value="total_score">คะแนนรวมเฉลี่ย</option><option value="clean">ความสะอาด</option><option value="tidy">ความเป็นระเบียบ</option><option value="board">บอร์ดและสื่อ</option><option value="energy">ประหยัดพลังงาน</option><option value="readiness">ความพร้อมใช้</option></select></div>
+                        <div id="timeGranularitySelector" class="flex items-center gap-2 p-1 rounded-lg bg-slate-800 hidden"><label class="text-xs text-slate-400 pl-2">แนวโน้ม:</label><select id="timeGranularity" class="bg-transparent ring-focus text-xs text-emerald-300"><option value="daily">รายวัน</option><option value="weekly">รายสัปดาห์</option><option value="monthly">รายเดือน</option></select></div>
+                        <div id="chartTypeSelector" class="flex items-center gap-1 p-1 rounded-lg bg-slate-800"><button data-type="bar" class="chart-type-btn chart-type-active px-3 py-1 text-xs rounded-md">แท่ง</button><button data-type="line" class="chart-type-btn px-3 py-1 text-xs rounded-md">แนวโน้ม</button><button data-type="radar" class="chart-type-btn px-3 py-1 text-xs rounded-md">เรดาร์</button></div>
+                    </div>
+                </div>
+                <div class="relative h-80"><canvas id="mainChart"></canvas></div>
+            </div>
+            <div class="rounded-2xl p-4 bg-slate-900/50 border border-slate-700/40">
+                <h3 class="font-medium text-slate-200 mb-3">ตารางข้อมูลการประเมินทั้งหมด</h3>
+                <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-4">วันที่</th><th class="text-left py-2 pr-4">ห้อง</th><th class="text-left py-2 pr-4">รวม</th><th class="text-left py-2 pr-4">หมายเหตุ</th><th class="text-left py-2 pr-4">รูป</th><th class="text-left py-2 pr-4">จัดการ</th></tr></thead><tbody id="tableBody"></tbody></table></div>
+            </div>
+>>>>>>> parent of cfe3183 (Revert "Update project files")
         </section>
-        <section id="tab-qr" class="glass rounded-2xl p-4 md:p-5 hidden">
-            <h2 class="text-lg font-semibold text-emerald-300">QR Code สำหรับเข้าดู Dashboard ประจำห้อง</h2><p class="text-sm text-slate-400 mt-1">สามารถพิมพ์หน้านี้เพื่อนำไปติดหน้าห้องเรียนได้</p>
-            <div id="qrCodeContainer" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 mt-5"></div>
-        </section>
-        <section id="tab-manage" class="glass rounded-2xl p-4 md:p-5 hidden">
-            <h2 class="text-lg font-semibold text-emerald-300">จัดการข้อมูลห้องเรียน</h2><p class="text-sm text-slate-400 mt-1">คุณสามารถเพิ่มหรือลบรายชื่อห้องเรียนได้</p>
+
+        <section id="tab-qr" class="glass rounded-2xl p-5 hidden">
+            <h2 class="text-lg font-semibold text-emerald-300">QR / เข้าดูเฉพาะห้อง</h2>
+            </section>
+
+        <section id="tab-manage" class="glass rounded-2xl p-5 hidden">
+            <h2 class="text-lg font-semibold text-emerald-300">จัดการข้อมูลห้องเรียน</h2><p class="text-sm text-slate-400 mt-1">คุณสามารถเพิ่มหรือลบรายชื่อห้องเรียนได้จากที่นี่</p>
             <div class="mt-6"><h3 class="font-medium text-slate-200">เพิ่มห้องเรียนใหม่</h3><div class="flex gap-2 mt-2"><input type="text" id="newRoomNameInput" placeholder="เช่น 735, 821" class="flex-1 bg-slate-800/70 rounded-lg p-3 ring-focus text-white"><button id="addRoomBtn" class="btn px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">เพิ่ม</button></div><p id="manageMsg" class="text-sm text-emerald-300 h-5 mt-2"></p></div>
             <div class="mt-6"><h3 class="font-medium text-slate-200">รายชื่อห้องเรียนทั้งหมด (พร้อมรายละเอียด)</h3><div class="overflow-x-auto mt-3"><table class="min-w-full text-sm"><thead class="text-slate-400"><tr><th class="text-left py-2 pr-4">ชื่อห้อง</th><th class="text-left py-2 pr-4">ช่วงเช้า</th><th class="text-left py-2 pr-4">ช่วงบ่าย</th><th class="text-left py-2 pr-4">จัดการ</th></tr></thead><tbody id="roomListContainer" class="text-slate-100"></tbody></table></div></div>
             <div class="mt-8 border-t border-slate-700/50 pt-6"><h2 class="text-lg font-semibold text-emerald-300">จัดการข้อมูลผู้ตรวจ</h2><p class="text-sm text-slate-400 mt-1">คุณสามารถเพิ่มหรือลบรายชื่อผู้ตรวจได้จากที่นี่</p><div class="mt-6"><h3 class="font-medium text-slate-200">เพิ่มผู้ตรวจใหม่</h3><div class="flex gap-2 mt-2"><input type="text" id="newEvaluatorNameInput" placeholder="เช่น นายใจดี มีคุณธรรม" class="flex-1 bg-slate-800/70 rounded-lg p-3 ring-focus text-white"><button id="addEvaluatorBtn" class="btn px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white">เพิ่ม</button></div><p id="evaluatorManageMsg" class="text-sm text-emerald-300 h-5 mt-2"></p></div><div class="mt-6"><h3 class="font-medium text-slate-200">รายชื่อผู้ตรวจทั้งหมด</h3><div id="evaluatorListContainer" class="flex gap-2 mt-3 flex-wrap border-t border-slate-700/50 pt-4"><p class="text-slate-400">กำลังโหลด...</p></div></div></div>
         </section>
+<<<<<<< HEAD
         <section id="single-room-view" class="hidden space-y-5">
             <div class="glass rounded-2xl p-4 sm:p-5"><div class="flex flex-col md:flex-row items-center justify-center text-center gap-4"><div><p class="text-sm text-slate-400">Dashboard ประจำห้อง</p><h1 id="room-view-name" class="text-2xl sm:text-3xl md:text-4xl font-bold text-emerald-300 mt-1"></h1></div><div class="border-l-2 border-slate-700/50 pl-4"><label for="publicRoomSelector" class="text-sm text-slate-400">ดูภาพรวมห้องอื่น</label><select id="publicRoomSelector" class="bg-slate-800/70 text-base ring-focus rounded-lg px-3 py-2 mt-1"></select></div></div></div>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4"><div class="rounded-2xl p-3 sm:p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-xs sm:text-sm text-slate-300">คะแนนล่าสุด</p><div class="text-2xl sm:text-3xl font-bold text-emerald-300 mt-1" id="room-kpi-latest">-</div></div><div class="rounded-2xl p-3 sm:p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-xs sm:text-sm text-slate-300">คะแนนเฉลี่ย (ห้องนี้)</p><div class="text-2xl sm:text-3xl font-bold text-emerald-300 mt-1" id="room-kpi-avg">-</div></div><div class="rounded-2xl p-3 sm:p-4 border border-sky-400/20 bg-sky-500/10"><p class="text-xs sm:text-sm text-slate-300">คะแนนเฉลี่ย (ทุกห้อง)</p><div class="text-2xl sm:text-3xl font-bold text-sky-300 mt-1" id="room-kpi-overall-avg">-</div></div><div class="rounded-2xl p-3 sm:p-4 border border-emerald-400/20 bg-emerald-500/10"><p class="text-xs sm:text-sm text-slate-300">จำนวนการประเมิน</p><div class="text-2xl sm:text-3xl font-bold text-emerald-300 mt-1" id="room-kpi-count">-</div></div></div>
@@ -131,8 +180,19 @@
     <div id="retroactiveModal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50 p-4"><div class="bg-slate-900 rounded-2xl p-5 max-w-sm w-full flex flex-col glass"><h4 class="text-sky-300 font-medium text-lg mb-4">บันทึกข้อมูลย้อนหลัง</h4><p class="text-sm text-slate-400 mb-4">ข้อมูลคะแนนและหมายเหตุจะถูกนำมาจากหน้าประเมินปัจจุบัน</p><div class="space-y-4"><div><label for="retroactiveDate" class="block text-sm text-slate-300 mb-1">วันที่ประเมิน</label><input type="date" id="retroactiveDate" class="w-full bg-slate-800/70 text-base ring-focus rounded-lg px-3 py-2"></div><div><label for="retroactiveTime" class="block text-sm text-slate-300 mb-1">เวลาที่ประเมิน (โดยประมาณ)</label><input type="time" id="retroactiveTime" class="w-full bg-slate-800/70 text-base ring-focus rounded-lg px-3 py-2"></div></div><div class="flex gap-3 mt-6"><button id="closeRetroactiveModalBtn" class="btn flex-1 px-4 py-3 rounded-xl bg-slate-700 hover:bg-slate-600">ยกเลิก</button><button id="saveRetroactiveBtn" class="btn flex-1 px-4 py-3 rounded-xl bg-sky-600 hover:bg-sky-700 text-white">ยืนยันการบันทึก</button></div></div></div>
     <div id="detailsModal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50 p-4"><div class="bg-slate-900 rounded-2xl p-5 max-w-2xl w-full flex flex-col glass max-h-[90vh]"><div class="flex justify-between items-center mb-3 border-b border-slate-700/50 pb-3"><h4 class="text-emerald-300 font-medium text-lg">รายละเอียดการประเมิน</h4><button id="closeDetailsModalBtn" class="btn text-sm px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600">ปิด</button></div><div class="overflow-y-auto space-y-4 pr-2"><div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center"><div><p class="text-xs text-slate-400">ห้อง</p><p id="details-room" class="font-semibold text-white"></p></div><div><p class="text-xs text-slate-400">ผู้ตรวจ</p><p id="details-evaluator" class="font-semibold text-white"></p></div><div><p class="text-xs text-slate-400">วันที่</p><p id="details-date" class="font-semibold text-white"></p></div><div><p class="text-xs text-slate-400">คะแนนรวม</p><p id="details-total" class="font-semibold text-xl text-emerald-300"></p></div></div><div id="details-scores" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 text-center"></div><div><p class="text-sm text-slate-400 mb-1">หมายเหตุ:</p><div id="details-note" class="bg-slate-800/50 p-3 rounded-lg text-sm text-slate-300 min-h-[4rem]"></div></div><div><p class="text-sm text-slate-400 mb-2">รูปหลักฐาน:</p><div id="details-photos" class="grid-auto"></div></div></div></div></div>
     
+=======
+    </main>
+
+    <div id="photoModal" class="fixed inset-0 hidden items-center justify-center bg-black/70 z-50 p-4">
+        <div class="bg-slate-900 rounded-2xl p-4 max-w-4xl w-full max-h-[90vh] flex flex-col glass">
+            <div class="flex justify-between items-center mb-3 border-b border-slate-700/50 pb-3"><h4 class="text-slate-200 font-medium">รูปหลักฐาน</h4><button id="closeModalBtn" class="btn text-sm px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600">ปิด</button></div>
+            <div id="modalImageContainer" class="grid grid-cols-2 md:grid-cols-4 gap-4 overflow-y-auto"></div>
+        </div>
+    </div>
+
+>>>>>>> parent of cfe3183 (Revert "Update project files")
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="./js/auth.js"></script>
-    <script src="./js/main.js?v=3"></script>
+    <script src="./js/main.js"></script>
 </body>
 </html>
