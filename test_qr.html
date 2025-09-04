@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <title>ทดสอบ QR Code</title>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/dist/qrcode.min.js"></script>
+</head>
+<body style="background-color: #111827; text-align: center; padding-top: 50px;">
+
+    <h1 style="color: white;">ไฟล์ทดสอบ QR Code</h1>
+
+    <canvas id="test-canvas"></canvas>
+
+    <script>
+        try {
+            const canvas = document.getElementById('test-canvas');
+            const text = 'QR Code Test Successful!';
+
+            // ลองเรียกใช้คำสั่ง QRCode.toCanvas
+            QRCode.toCanvas(canvas, text, function (error) {
+                if (error) {
+                    console.error(error);
+                    document.body.innerHTML += '<h2 style="color: red;">เกิดข้อผิดพลาด: ไม่สามารถสร้าง QR Code ได้ กรุณาเช็ค Console (F12)</h2>';
+                } else {
+                    console.log('QR Code generated successfully!');
+                    document.body.innerHTML += '<h2 style="color: #22c55e;">สำเร็จ! ไลบรารี QR Code ทำงานได้ปกติ</h2>';
+                }
+            });
+        } catch (e) {
+            console.error(e);
+            document.body.innerHTML += '<h2 style="color: red;">เกิดข้อผิดพลาดร้ายแรง: ไม่รู้จักคำสั่ง QRCode เลย (ไลบรารีโหลดไม่สำเร็จ)</h2>';
+        }
+    </script>
+
+</body>
+</html>
